@@ -25,7 +25,7 @@ pipe = pipeline(
     "text-generation",
     model=model,
     tokenizer=tokenizer,
-    max_new_tokens=150,
+    max_new_tokens=300,
     model_kwargs={"torch_dtype": torch.float16},
 )
 llm = HuggingFacePipeline(pipeline=pipe)

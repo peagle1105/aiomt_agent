@@ -116,7 +116,7 @@ agent = create_react_agent(
 
 # 7. Hàm chat
 def chat():
-    print("🤖 Chat với Gemma-3-1B (gõ 'exit' để thoát)")
+    print("🤖 Chat với AIoMT Agent (gõ 'exit' để thoát)")
     while True:
         user_input = input("You: ")
         if user_input.lower() == "exit":

@@ -117,28 +117,32 @@ class ToolCallingLLMWrapper(Runnable[LanguageModelInput, LanguageModelOutput]):
         import json
         import re
         
-        # More flexible pattern matching
-        pattern = r"\{[\s\S]*\"name\"[\s\S]*\"arguments\"[\s\S]*\}"
-        match = re.search(pattern, text)
+        # First try XML-style tool call extraction
+        xml_match = re.search(r"<tool>([\s\S]*?)</tool>", text, re.DOTALL)
+        if xml_match:
+            try:
+                json_str = xml_match.group(1).strip()
+                json_str = json_str.replace("'", '"')  # Fix quotes
+                data = json.loads(json_str)
+                name = data["name"]
+                args = data.get("arguments", {})
+                return {"name": name, "args": args}
+            except Exception as e:
+                print(f"[DEBUG] XML tool parse failed: {e}")
         
-        if not match:
-            return None
-
-        try:
-            json_str = match.group(0).replace("'", '"')  # Fix quotes
-            data = json.loads(json_str)
-            name = data["name"]
-            args = data.get("arguments", {})
-            if name in self.tools:
-                return {
-                    "name": name,
-                    "args": args,
-                    "id": f"call_{abs(hash(text)) % 1000000:06d}",
-                    "type": "tool_call"
-                }
-        except Exception as e:
-            print(f"[DEBUG] Failed to parse tool call: {e}")
-            return None
+        # Fallback to JSON pattern matching
+        json_pattern = r"\{[\s\S]*?\"name\"[\s\S]*?\"arguments\"[\s\S]*?\}"
+        json_match = re.search(json_pattern, text, re.DOTALL)
+        if json_match:
+            try:
+                json_str = json_match.group(0).replace("'", '"')  # Fix quotes
+                data = json.loads(json_str)
+                name = data["name"]
+                args = data.get("arguments", {})
+                return {"name": name, "args": args}
+            except Exception as e:
+                print(f"[DEBUG] JSON tool parse failed: {e}")
+        
         return None
 
     @property
